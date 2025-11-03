@@ -3,79 +3,125 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>“i love you …” — drag to spin, custom name, 1080p download + countdown</title>
+<title>“i love you …” — drag to spin</title>
 
+<!-- High-readability cursive -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
 
 <style>
   :root{
-    --bg1:#07070a; --bg2:#0d0f15; --pink:#ff4d88; --maroon:#a0133b; --text:#ffe6ef;
+    --bg1:#07070a;
+    --bg2:#0d0f15;
+    --pink:#ff4d88;   /* bright pink */
+    --maroon:#a0133b; /* deep maroon */
+    --text:#ffe6ef;   /* soft light pink */
   }
   html,body{height:100%;margin:0;background:radial-gradient(1200px 900px at 70% 20%, var(--bg2), var(--bg1));color:#fff;}
   body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;}
   #app{position:fixed; inset:0; overflow:hidden; touch-action:none;}
-  canvas{display:block}
-  /* hidden 1080x1920 capture canvas */
-  #captureCanvas{position:fixed; left:-99999px; top:-99999px; width:0; height:0; visibility:hidden;}
+  canvas{display:block;}
 
-  /* UI bar */
-  #ui{
-    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
-    padding: 8px 10px; border-radius: 12px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  /* Floating controls */
+  .panel{
+    position: fixed;
+    left: 50%;
+    top: 14px;
+    transform: translateX(-50%);
+    display: grid;
+    grid-auto-flow: column;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 999px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 10;
   }
-  #ui label{font-size:12px;opacity:.85}
-  #ui input{
-    width: 170px; max-width: 56vw;
-    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
-    border-radius: 10px; color: #fff; padding: 8px 10px; outline: none; font-size: 14px;
+  .panel input{
+    width: min(46vw,280px);
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.22);
+    background: rgba(10,10,14,.5);
+    color: #fff;
+    outline: none;
   }
-  #ui button{
-    cursor: pointer; color:#fff;
-    background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-    border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 8px 10px; font-weight: 600;
+  .panel button{
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.22);
+    background: rgba(255,255,255,.08);
+    color:#fff;
+    cursor:pointer;
   }
+  .panel .copywrap{
+    display:flex; align-items:center; gap:6px;
+    padding: 6px 10px; border-radius: 999px;
+    border:1px solid rgba(255,255,255,.18);
+    background: rgba(10,10,14,.5);
+    max-width: min(54vw, 360px);
+  }
+  .panel .link{
+    font-size: 12px; color:#ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px;
+  }
+  .icon-copy{width:16px;height:16px; display:inline-block}
+  .muted{font-size:12px; opacity:.75}
 
   #badge{
     position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
-    font-size: 12px; letter-spacing:.04em; opacity:.65;
+    font-size: 12px; letter-spacing:.04em; opacity:.75;
     background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
     padding: 6px 12px; border-radius: 999px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     user-select: none; pointer-events: none;
   }
+
+  /* Credit */
+  #credit{
+    position: fixed; right: 10px; bottom: 10px; z-index: 10;
+    font-size: 12px; opacity:.7;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+    padding: 6px 10px; border-radius: 999px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #credit a{color:#fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,.35)}
 </style>
 </head>
 <body>
-<div id="app" aria-label="Drag to spin view of a large heart outline with revolving 'i love you … {name}' text"></div>
-<canvas id="captureCanvas" width="1080" height="1920"></canvas>
+<div id="app" aria-label="Drag to spin view of a large heart outline with moving love text"></div>
 
-<!-- Name input + 1080p download -->
-<form id="ui" autocomplete="off">
-  <label for="name">Name:</label>
-  <input id="name" name="name" type="text" placeholder="type a name…" maxlength="24" />
-  <button type="submit" title="Apply name">Update</button>
-  <button id="downloadBtn" type="button" title="Download 1080×1920 video">Download</button>
-</form>
+<!-- Controls: name input + share -->
+<div class="panel" role="region" aria-label="Personalize and share">
+  <label class="muted" for="nameInput">Name:</label>
+  <input id="nameInput" type="text" placeholder="Type a name…" inputmode="text" autocomplete="off" />
+  <button id="applyBtn" title="Update the animation">Apply</button>
+  <div class="copywrap" title="Shareable link">
+    <span id="shareLink" class="link">Link appears after Apply</span>
+    <button id="copyBtn" title="Copy link">
+      <svg class="icon-copy" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+      </svg>
+    </button>
+  </div>
+  <span class="muted" id="howto">Enter a name → Apply → Copy & share the link. Opening the link shows the animation with that name; they can change it and reshare.</span>
+</div>
 
-<div id="badge">Drag to spin • revolving text • custom name • made by amk1101</div>
+<div id="badge">Drag to spin • slow revolve • “i love you …”</div>
+<div id="credit">Created by <a href="https://github.com/amk1101" target="_blank" rel="noopener">amk1101</a></div>
 
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 <script>
 (() => {
-  // ---------- Tunables ----------
-  const BASE_PHRASE = "i love you";
+  // ---------- Settings (animation unchanged) ----------
   const isMobile = Math.min(window.innerWidth, window.innerHeight) < 768;
+  const PIXEL_RATIO_CAP = isMobile ? 1.8 : 2.2;
 
-  const PIXEL_RATIO_CAP = isMobile ? 2.0 : 2.5; // on-screen
-  const CAPTURE_W = 1080, CAPTURE_H = 1920;     // fixed 1080p portrait
-
-  // Fit heart fully inside frame (slightly smaller scale + a bit farther camera)
-  const HEART_SCALE = isMobile ? 1.35 : 1.45;
+  // Heart & path
+  const HEART_SCALE = isMobile ? 1.55 : 1.8;
   const OUTLINE_SAMPLES = 800;
 
+  // Text sprites (slow + readable)
   const LABEL_COUNT   = isMobile ? 48 : 64;
   const SPRITE_PX     = isMobile ? 40 : 44;
   const SPRITE_WORLD  = isMobile ? 0.34 : 0.36;
@@ -83,175 +129,113 @@
   const DEPTH_WAVE    = 0.10;
   const NORMAL_PUSH   = 0.024;
 
-  // Camera spherical: start at 30°
-  let radius = isMobile ? 5.2 : 5.8;
-  let theta  = Math.PI/6; // 30°
+  // Camera spherical params (radius, azimuth θ, elevation φ)
+  let radius = isMobile ? 4.6 : 5.4;
+  let theta  = Math.PI/4;
   let phi    = 0.6;
 
-  // Drag controls (inverted)
-  let dragging=false, lastX=0, lastY=0, vTheta=0, vPhi=0;
-  const ROTATE_SENS = -0.005;  // opposite direction
+  // Drag state with inertia
+  let dragging = false, lastX=0, lastY=0;
+  let vTheta = 0, vPhi = 0;
+  const ROTATE_SENS = 0.010;
   const DAMPING = 0.92;
   const PHI_MIN = 0.1, PHI_MAX = 1.3;
+
+  // Pinch/wheel zoom
   let lastPinchDist = 0;
   const R_MIN = 3.4, R_MAX = 10;
 
-  // Wait for font before init
+  // Phrase state (editable): default comes from ?name=... else "you"
+  function getNameFromURL(){
+    const p = new URLSearchParams(location.search).get('name');
+    return (p && p.trim()) ? p.trim() : "you";
+  }
+  function buildPhrase(name){ return `i love you ${name}`; }
+  let currentName = getNameFromURL();
+  let currentPhrase = buildPhrase(currentName);
+
+  // UI wiring
+  const nameInput = document.getElementById('nameInput');
+  const applyBtn  = document.getElementById('applyBtn');
+  const shareLinkEl = document.getElementById('shareLink');
+  const copyBtn   = document.getElementById('copyBtn');
+  const badge = document.getElementById('badge');
+
+  nameInput.value = currentName;
+
+  // Ensure font renders crisp on first paint, then init
   Promise.all([
     document.fonts.load(`700 ${Math.floor(SPRITE_PX)}px "Dancing Script"`),
     document.fonts.ready
-  ]).then(init).catch(init);
+  ]).then(init);
+
+  // Scene globals we need to update text without touching animation
+  let renderer, scene, camera, outlineCurve, labels = [], spriteTexture = null;
 
   function init(){
-    // ----- Main renderer / scene / camera (on-screen) -----
+    // ----- Renderer / Scene -----
     const appEl = document.getElementById('app');
-    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance' });
+    renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, PIXEL_RATIO_CAP));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     appEl.appendChild(renderer.domElement);
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(isMobile ? 62 : 58, window.innerWidth / window.innerHeight, 0.1, 100);
-    setCameraFromSpherical(camera);
-
-    // ----- Capture renderer / camera (off-screen 1080x1920) -----
-    const captureCanvas = document.getElementById('captureCanvas');
-    const captureRenderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, canvas: captureCanvas, powerPreference:'high-performance' });
-    captureRenderer.setPixelRatio(1); // exact pixels
-    captureRenderer.setSize(CAPTURE_W, CAPTURE_H, false);
-    const captureCamera = new THREE.PerspectiveCamera(isMobile ? 62 : 58, CAPTURE_W / CAPTURE_H, 0.1, 100);
-    function syncCaptureCam(){
-      captureCamera.position.copy(camera.position);
-      captureCamera.quaternion.copy(camera.quaternion);
-      captureCamera.fov = camera.fov;
-      captureCamera.updateProjectionMatrix();
-    }
-    syncCaptureCam();
+    scene = new THREE.Scene();
 
     // Lights
     scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.65));
     const pinkKey = new THREE.PointLight(0xff4d88, 1.0, 30); pinkKey.position.set(3,2,5); scene.add(pinkKey);
 
+    // Camera
+    camera = new THREE.PerspectiveCamera(isMobile ? 62 : 58, window.innerWidth / window.innerHeight, 0.1, 100);
+    setCameraFromSpherical(camera);
+
     // Heart outline
-    const outlineCurve = makeHeartCurve(OUTLINE_SAMPLES, HEART_SCALE);
+    outlineCurve = makeHeartCurve(OUTLINE_SAMPLES, HEART_SCALE);
     scene.add(makeLine(outlineCurve, getCss('--maroon'), getCss('--pink')));
 
-    // Labels
-    let currentPhrase = BASE_PHRASE;
-    let spriteTex = makeTextTexture(currentPhrase, SPRITE_PX);
-    const labels = makeMovingLabels(spriteTex, outlineCurve, LABEL_COUNT, SPRITE_WORLD);
+    // Text sprites (initial phrase)
+    spriteTexture = makeTextTexture(currentPhrase, SPRITE_PX);
+    labels = makeMovingLabels(spriteTexture, outlineCurve, LABEL_COUNT, SPRITE_WORLD);
     labels.forEach(s => scene.add(s));
 
-    // Stars
+    // Background stars
     addBackgroundStars(scene, isMobile ? 380 : 680);
 
-    // --- Countdown sprite (attached to camera so it's screen-fixed) ---
-    const countdownSprite = makeCountdownSprite("5");
-    countdownSprite.visible = false;
-    camera.add(countdownSprite); // render both on-screen and in capture
-    countdownSprite.position.set(0, 0, -2); // in front of camera
-
-    // UI: update name
-    const form = document.getElementById('ui');
-    const nameInput = document.getElementById('name');
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = (nameInput.value || '').trim();
-      const phrase = name ? `${BASE_PHRASE} ${name}` : BASE_PHRASE;
-      if (phrase === currentPhrase) return;
-      currentPhrase = phrase;
-      spriteTex.dispose();
-      spriteTex = makeTextTexture(currentPhrase, SPRITE_PX);
-      const aspect = spriteTex.image.width / spriteTex.image.height;
-      for (const sp of labels){
-        sp.material.map = spriteTex;
-        sp.material.needsUpdate = true;
-        sp.scale.set(SPRITE_WORLD * aspect, SPRITE_WORLD, 1);
-      }
-    });
-
-    // Download (1080×1920, 5s) with on-video countdown 5..1
-    const downloadBtn = document.getElementById('downloadBtn');
-    let capturing = false;
-    downloadBtn.addEventListener('click', () => {
-      if (!('MediaRecorder' in window)) {
-        alert('Video download not supported in this browser (use Chrome/Edge/Firefox).');
-        return;
-      }
-      if (capturing) return;
-
-      const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
-      const type = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
-      let rec;
-      try{
-        const stream = captureCanvas.captureStream(60);
-        rec = new MediaRecorder(
-          stream,
-          type ? { mimeType: type, videoBitsPerSecond: 12_000_000 } : { videoBitsPerSecond: 12_000_000 }
-        );
-      }catch(err){
-        console.error(err); alert('Could not start capture.'); return;
-      }
-
-      const chunks = [];
-      rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-      rec.onstop = () => {
-        const blob = new Blob(chunks, { type: rec.mimeType || 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'revolving-heart-1080p.webm';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url), 1000);
-        downloadBtn.disabled = false; capturing = false;
-        // hide countdown after save (safety)
-        countdownSprite.visible = false;
-      };
-
-      // Start capture and run countdown overlay
-      capturing = true; downloadBtn.disabled = true;
-      let n = 5;
-      updateCountdownTexture(countdownSprite, String(n));
-      countdownSprite.visible = true;
-
-      rec.start();
-
-      const tick = () => {
-        n -= 1;
-        if (n>=1){
-          updateCountdownTexture(countdownSprite, String(n));
-          setTimeout(tick, 1000);
-        } else {
-          // remove the countdown for the last ~0.2s so ending is clean
-          setTimeout(() => { countdownSprite.visible = false; }, 200);
-          setTimeout(() => { try{ rec.stop(); }catch{} }, 800); // stop at ~5s total
-        }
-      };
-      setTimeout(tick, 1000);
-    });
-
-    // Controls
+    // Pointer controls (unchanged)
     renderer.domElement.addEventListener('pointerdown', (e) => {
       dragging = true; lastX = e.clientX; lastY = e.clientY;
       renderer.domElement.setPointerCapture(e.pointerId);
     });
     renderer.domElement.addEventListener('pointermove', (e) => {
       if (!dragging) return;
-      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
       lastX = e.clientX; lastY = e.clientY;
-      vTheta = -dx * ROTATE_SENS; vPhi = -dy * ROTATE_SENS;
-      theta += vTheta; phi = clamp(phi + vPhi, PHI_MIN, PHI_MAX);
-      setCameraFromSpherical(camera); syncCaptureCam();
+      vTheta = dx * ROTATE_SENS;
+      vPhi   = dy * ROTATE_SENS;
+      theta += vTheta;
+      phi   = clamp(phi + vPhi, PHI_MIN, PHI_MAX);
+      setCameraFromSpherical(camera);
       e.preventDefault();
     }, {passive:false});
     renderer.domElement.addEventListener('pointerup', (e) => {
-      dragging = false; renderer.domElement.releasePointerCapture(e.pointerId);
+      dragging = false;
+      renderer.domElement.releasePointerCapture(e.pointerId);
     });
+
+    // Wheel zoom (desktop)
     renderer.domElement.addEventListener('wheel', (e) => {
       radius = clamp(radius + (e.deltaY>0 ? 0.3 : -0.3), R_MIN, R_MAX);
-      setCameraFromSpherical(camera); syncCaptureCam();
+      setCameraFromSpherical(camera);
     }, {passive:true});
+
+    // Pinch zoom (mobile)
     renderer.domElement.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) lastPinchDist = dist2(e.touches[0], e.touches[1]);
+      if (e.touches.length === 2){
+        lastPinchDist = dist2(e.touches[0], e.touches[1]);
+      }
     }, {passive:true});
     renderer.domElement.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2){
@@ -259,56 +243,100 @@
         const delta = Math.sqrt(lastPinchDist) - Math.sqrt(d);
         lastPinchDist = d;
         radius = clamp(radius + delta * 0.01, R_MIN, R_MAX);
-        setCameraFromSpherical(camera); syncCaptureCam();
+        setCameraFromSpherical(camera);
         e.preventDefault();
       }
     }, {passive:false});
 
-    // Animation
-    const t0 = performance.now();
-    renderer.setAnimationLoop(() => {
+    // Animate
+    let t0 = performance.now();
+    (function animate(){
+      requestAnimationFrame(animate);
+
+      // inertia when not dragging
       if (!dragging){
-        vTheta *= DAMPING; vPhi *= DAMPING;
+        vTheta *= DAMPING;
+        vPhi   *= DAMPING;
         if (Math.abs(vTheta) > 1e-4 || Math.abs(vPhi) > 1e-4){
-          theta += vTheta; phi = clamp(phi + vPhi, PHI_MIN, PHI_MAX);
-          setCameraFromSpherical(camera); syncCaptureCam();
+          theta += vTheta;
+          phi   = clamp(phi + vPhi, PHI_MIN, PHI_MAX);
+          setCameraFromSpherical(camera);
         }
       }
+
       const t = (performance.now() - t0) / 1000;
       const cycle = SPEED * t;
+
       for (let i=0;i<labels.length;i++){
         const sp = labels[i];
         const u = (sp.userData.u0 + cycle) % 1.0;
+
         const P = sampleCurve(outlineCurve, u);
         const T = tangentOnCurve(outlineCurve, u).normalize();
         const N = new THREE.Vector3(-T.y, T.x, 0).normalize();
+
         const z = Math.sin((u + i/labels.length) * Math.PI * 2) * DEPTH_WAVE;
         sp.position.set(P.x + N.x * NORMAL_PUSH, P.y + N.y * NORMAL_PUSH, z);
       }
-      // render on-screen and to 1080p canvas
-      renderer.render(scene, camera);
-      captureRenderer.render(scene, captureCamera);
-    });
 
-    // Resize (screen only; capture stays 1080x1920)
+      renderer.render(scene, camera);
+    })();
+
+    // Resize
     window.addEventListener('resize', () => {
       const w = window.innerWidth, h = window.innerHeight;
       renderer.setSize(w, h);
-      camera.aspect = w/h; camera.updateProjectionMatrix(); syncCaptureCam();
+      camera.aspect = w/h; camera.updateProjectionMatrix();
     });
+
+    // Initial UI state
+    updateBadge();
+    updateShareLink();
   }
 
-  // ---------- Camera ----------
+  // Replace the text texture only (animation remains unchanged)
+  function applyName(newName){
+    const name = (newName || "").trim();
+    if (!name) return;
+    currentName = name;
+    currentPhrase = buildPhrase(currentName);
+    updateBadge();
+
+    const oldTex = spriteTexture;
+    spriteTexture = makeTextTexture(currentPhrase, SPRITE_PX);
+    for (const sp of labels){
+      sp.material.map = spriteTexture;
+      sp.material.needsUpdate = true;
+    }
+    // free old GPU texture
+    if (oldTex) oldTex.dispose();
+
+    updateShareLink();
+  }
+
+  function updateBadge(){
+    badge.textContent = `Drag to spin • slow revolve • “${currentPhrase}”`;
+    document.title = `“${currentPhrase}” — drag to spin`;
+  }
+
+  function updateShareLink(){
+    const url = new URL(location.href);
+    url.searchParams.set('name', currentName);
+    const s = url.toString();
+    shareLinkEl.textContent = s;
+    shareLinkEl.dataset.href = s;
+  }
+
+  // ---------- Camera helpers ----------
   function setCameraFromSpherical(cam){
     const x = radius * Math.cos(phi) * Math.cos(theta);
     const z = radius * Math.cos(phi) * Math.sin(theta);
     const y = radius * Math.sin(phi);
     cam.position.set(x, y, z);
     cam.lookAt(0,0,0);
-    cam.updateMatrixWorld(); cam.updateProjectionMatrix();
   }
 
-  // ---------- Curve + sampling ----------
+  // ---------- Heart curve & sampling ----------
   function heart2D(t){
     const x = 16 * Math.sin(t)**3;
     const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
@@ -325,7 +353,7 @@
     const c = box.getCenter(new THREE.Vector2());
     const size = box.getSize(new THREE.Vector2());
     const s = (2.0 / Math.max(size.x, size.y)) * scale;
-    return pts.map(p => new THREE.Vector3((p.x - c.x) * s, (p.y - c.y) * s, 0));
+    return pts.map(p => new THREE.Vector3( (p.x - c.x) * s, (p.y - c.y) * s, 0 ));
   }
 
   function makeLine(curvePts, colorHex, glowHex){
@@ -333,6 +361,7 @@
     const mat = new THREE.LineBasicMaterial({ color: new THREE.Color(colorHex) });
     const line = new THREE.Line(geo, mat);
 
+    // Subtle glow points along the line
     const glowGeo = new THREE.BufferGeometry();
     const glowPos = new Float32Array(curvePts.length * 3);
     for (let i=0;i<curvePts.length;i++){
@@ -345,7 +374,8 @@
     const glow = new THREE.Points(glowGeo, glowMat);
 
     const group = new THREE.Group();
-    group.add(line); group.add(glow);
+    group.add(line);
+    group.add(glow);
     return group;
   }
 
@@ -370,6 +400,7 @@
   function sampleCurve(curvePts, u){
     const { L, total } = ensureTable(curvePts);
     const target = u * total;
+
     let i=0;
     while (i<L.length && L[i] < target) i++;
     const i0 = (i===0) ? 0 : i-1;
@@ -391,6 +422,7 @@
   // ---------- Text sprites ----------
   function makeTextTexture(phrase, px){
     const pad = Math.max(12, Math.floor(px * 0.6));
+
     const tmp = document.createElement('canvas').getContext('2d');
     tmp.font = `700 ${px}px "Dancing Script", cursive`;
     const w = Math.ceil(tmp.measureText(phrase).width) + pad*2;
@@ -401,24 +433,30 @@
     const ctx = canvas.getContext('2d');
 
     ctx.clearRect(0,0,W,H);
-    ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
     ctx.font = `700 ${px}px "Dancing Script", cursive`;
 
     const cx = W/2, cy = H/2;
 
-    // glow
+    // Outer glow for readability
     ctx.shadowColor = getCss('--pink');
     ctx.shadowBlur = Math.max(10, Math.floor(px*0.5));
-    ctx.fillStyle = getCss('--text'); ctx.fillText(phrase, cx, cy);
+    ctx.fillStyle = getCss('--text');
+    ctx.fillText(phrase, cx, cy);
 
-    // maroon stroke + fill
-    ctx.shadowBlur = 0; ctx.lineJoin = 'round';
-    ctx.strokeStyle = getCss('--maroon'); ctx.lineWidth = Math.max(2, Math.floor(px*0.10));
+    // Maroon stroke + fill for crisp edges
+    ctx.shadowBlur = 0;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = getCss('--maroon');
+    ctx.lineWidth = Math.max(2, Math.floor(px*0.10));
     ctx.strokeText(phrase, cx, cy);
-    ctx.fillStyle = getCss('--text'); ctx.fillText(phrase, cx, cy);
+    ctx.fillStyle = getCss('--text');
+    ctx.fillText(phrase, cx, cy);
 
     const tex = new THREE.CanvasTexture(canvas);
-    tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+    tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   }
 
@@ -433,46 +471,6 @@
       labels.push(sp);
     }
     return labels;
-  }
-
-  // ---------- Countdown sprite ----------
-  function makeCountdownSprite(text){
-    const tex = makeCountdownTexture(text);
-    const mat = new THREE.SpriteMaterial({ map: tex, transparent:true, depthTest:false, depthWrite:false });
-    const sp = new THREE.Sprite(mat);
-    // size roughly 40% of screen height at default FOV
-    sp.scale.set(1.1, 1.1, 1); // scale in world units (tuned for position z = -2)
-    sp.userData._tex = tex;
-    return sp;
-  }
-  function updateCountdownTexture(sprite, text){
-    if (sprite.userData._tex) sprite.userData._tex.dispose();
-    sprite.material.map = sprite.userData._tex = makeCountdownTexture(text);
-    sprite.material.needsUpdate = true;
-  }
-  function makeCountdownTexture(text){
-    const px = 260; // big
-    const pad = Math.floor(px * 0.8);
-    const tmp = document.createElement('canvas').getContext('2d');
-    tmp.font = `800 ${px}px system-ui, Arial, Helvetica, sans-serif`;
-    const w = Math.ceil(tmp.measureText(text).width) + pad*2;
-    const h = Math.ceil(px*1.4) + pad*2;
-    const W = nextPow2(w), H = nextPow2(h);
-    const c = document.createElement('canvas'); c.width=W; c.height=H;
-    const ctx = c.getContext('2d');
-    ctx.textBaseline='middle'; ctx.textAlign='center';
-    ctx.font = `800 ${px}px system-ui, Arial, Helvetica, sans-serif`;
-    const cx=W/2, cy=H/2;
-    // shadow/glow
-    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = Math.max(10, Math.floor(px*0.45));
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(text, cx, cy);
-    // subtle stroke
-    ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = Math.max(6, Math.floor(px*0.06));
-    ctx.strokeText(text, cx, cy);
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
   }
 
   // ---------- Stars ----------
@@ -496,6 +494,43 @@
   function getCss(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
   function dist2(t1, t2){ const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY; return dx*dx+dy*dy; }
+
+  // ---------- UI events ----------
+  applyBtn.addEventListener('click', () => {
+    const nm = nameInput.value;
+    if (nm && nm.trim()){
+      applyName(nm.trim());
+      // push state so the URL updates without reload (optional)
+      const u = new URL(location.href);
+      u.searchParams.set('name', nm.trim());
+      history.replaceState(null, '', u);
+    }
+  });
+
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { applyBtn.click(); }
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    const href = shareLinkEl.dataset.href || shareLinkEl.textContent;
+    if (!href) return;
+    try{
+      await navigator.clipboard.writeText(href);
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.textContent = ''; copyBtn.insertAdjacentHTML('afterbegin',
+        '<svg class="icon-copy" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>'
+      ); }, 900);
+    }catch{
+      // fallback: select text
+      const tmp = document.createElement('textarea');
+      tmp.value = href; document.body.appendChild(tmp);
+      tmp.select(); document.execCommand('copy'); document.body.removeChild(tmp);
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.textContent = ''; copyBtn.insertAdjacentHTML('afterbegin',
+        '<svg class="icon-copy" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>'
+      ); }, 900);
+    }
+  });
 })();
 </script>
 </body>
