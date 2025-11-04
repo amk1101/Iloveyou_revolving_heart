@@ -141,8 +141,11 @@
   <form name="share-telemetry" netlify netlify-honeypot="bot-field">
     <input type="text" name="form-name" value="share-telemetry" />
     <input type="text" name="bot-field" />
+    <!-- columns you’ll see in Netlify CSV -->
     <input type="text" name="event" />
-    <input type="text" name="share_seq" />
+    <input type="text" name="apply_seq" />
+    <input type="text" name="path_before" />
+    <input type="text" name="landing_url" />
     <input type="text" name="name" />
     <input type="text" name="ref" />
     <input type="text" name="utm_source" />
@@ -173,7 +176,10 @@
 
   if (ref) { try { localStorage.setItem('ref', ref); } catch {} }
 
-  /* -------------------- Helpers: telemetry-on-share -------------------- */
+  /* -------------------- Landing URL (for clean referrer context) -------------------- */
+  const landingHref = location.href;
+
+  /* -------------------- Helpers: env + post + counters -------------------- */
   function collectEnv() {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
     return {
@@ -191,28 +197,35 @@
     };
   }
 
-  function postToNetlify(extra) {
+  function postToNetlify(payload) {
     const base = {
       'form-name'   : 'share-telemetry',
-      event         : 'share',
       ref           : (new URLSearchParams(location.search).get('ref') || localStorage.getItem('ref') || '').trim(),
       utm_source    : (new URLSearchParams(location.search).get('utm_source') || '').trim(),
       utm_medium    : (new URLSearchParams(location.search).get('utm_medium') || '').trim(),
       utm_campaign  : (new URLSearchParams(location.search).get('utm_campaign') || '').trim(),
       ...collectEnv(),
-      ...extra
+      ...payload
     };
     const body = new URLSearchParams(base).toString();
-    fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body })
-      .catch(()=>{});
+    fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }).catch(()=>{});
   }
 
-  // per-session sequential counter of shares
-  function nextShareSeq(){
-    const KEY = 'share_seq_v1';
+  function nextApplySeq(){
+    const KEY = 'apply_seq_v1';
     let n = 0;
     try { n = parseInt(sessionStorage.getItem(KEY) || '0', 10) || 0; n++; sessionStorage.setItem(KEY, String(n)); } catch {}
     return n;
+  }
+
+  function trackApply(name){
+    postToNetlify({
+      event: 'apply',
+      name: name,
+      apply_seq: String(nextApplySeq()),
+      path_before: location.pathname + location.search, // pre-update
+      landing_url: landingHref
+    });
   }
 
   /* -------------------- App state -------------------- */
@@ -232,7 +245,7 @@
 
   nameInput.value = currentName;
 
-  /* -------------------- THREE scene (unchanged) -------------------- */
+  /* -------------------- THREE scene -------------------- */
   const PIXEL_RATIO_CAP = 2.0;
   const HEART_SCALE = 1.7;
   const OUTLINE_SAMPLES = 800;
@@ -556,41 +569,35 @@
   function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
   function dist2(t1, t2){ const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY; return dx*dx+dy*dy; }
 
-  // Name apply (NO telemetry here)
+  /* -------------------- Apply name (with telemetry BEFORE URL change) -------------------- */
   applyBtn.addEventListener('click', () => {
-    const nm = nameInput.value;
-    if (nm && nm.trim()){
-      applyName(nm.trim());
-      const u = new URL(location.href);
-      u.searchParams.set('name', nm.trim());
-      if (ref) u.searchParams.set('ref', ref);
-      if (utm_source)   u.searchParams.set('utm_source', utm_source);
-      if (utm_medium)   u.searchParams.set('utm_medium', utm_medium);
-      if (utm_campaign) u.searchParams.set('utm_campaign', utm_campaign);
-      history.replaceState(null, '', u);
-    }
+    const nm = nameInput.value && nameInput.value.trim();
+    if (!nm) return;
+
+    // 1) record BEFORE changing the URL so referrer/path are clean
+    trackApply(nm);
+
+    // 2) update visuals
+    applyName(nm);
+
+    // 3) update URL (after logging)
+    const u = new URL(location.href);
+    u.searchParams.set('name', nm);
+    if (ref) u.searchParams.set('ref', ref);
+    if (utm_source)   u.searchParams.set('utm_source', utm_source);
+    if (utm_medium)   u.searchParams.set('utm_medium', utm_medium);
+    if (utm_campaign) u.searchParams.set('utm_campaign', utm_campaign);
+    history.replaceState(null, '', u);
   });
   nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyBtn.click(); });
 
-  // Share click (DO telemetry here)
+  /* -------------------- Share click (NO telemetry) -------------------- */
   shareBtn.addEventListener('click', () => {
     updateShareLink();
     sheet.classList.add('open');
-
-    const share_seq = nextShareSeq();
-    // track last shared name in session (useful in your CSV)
-    try { sessionStorage.setItem('last_shared_name', currentName); } catch {}
-
-    postToNetlify({
-      name: currentName,
-      event: 'share',
-      share_seq: String(share_seq)
-    });
   });
-
   closeSheet.addEventListener('click', () => sheet.classList.remove('open'));
 
-  // Copy button (no extra telemetry; you can add if you want)
   copyBtn.addEventListener('click', async () => {
     const href = shareLinkEl.dataset.href || shareLinkEl.textContent;
     if (!href) return;
