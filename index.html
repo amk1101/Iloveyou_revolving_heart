@@ -91,6 +91,9 @@
 
   /* Only instruction text */
   #howto{ margin-top:10px; font-size:12px; opacity:.9 }
+
+  /* Hidden Netlify form for free analytics */
+  form[name="share-telemetry"]{display:none;}
 </style>
 </head>
 <body>
@@ -141,47 +144,133 @@
     <div id="howto">How to share: type a name → Apply → Share → Copy and send.</div>
   </div>
 
+  <!-- Netlify Forms sink (free). View data in Netlify → Forms → Submissions -->
+  <form name="share-telemetry" netlify netlify-honeypot="bot-field">
+    <input type="text" name="form-name" value="share-telemetry" />
+    <input type="text" name="bot-field" />
+    <input type="text" name="name" />
+    <input type="text" name="ref" />
+    <input type="text" name="utm_source" />
+    <input type="text" name="utm_medium" />
+    <input type="text" name="utm_campaign" />
+    <input type="text" name="ua" />
+    <input type="text" name="tz" />
+    <input type="text" name="width" />
+    <input type="text" name="height" />
+    <input type="text" name="ts" />
+    <input type="text" name="path" />
+    <input type="text" name="platform" />
+<input type="text" name="language" />
+<input type="text" name="dpr" />
+<input type="text" name="screen" />
+<input type="text" name="geotz" />
+<input type="text" name="geolat" />
+<input type="text" name="geolon" />
+<input type="text" name="referrer" />
+
+  </form>
+
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 <script>
 (() => {
-  // ---------- Stable animation config (same on mobile & desktop) ----------
-  const PIXEL_RATIO_CAP = 2.0;   // fixed cap so DPI changes don’t alter look/perf
-  const HEART_SCALE = 1.7;       // fixed heart scale (not tied to window size)
+  /* -------------------- 1) NAME + REF FROM URL -------------------- */
+  const qs = new URLSearchParams(location.search);
+  const initialName = (qs.get('name') || 'you').trim();
+  const ref = (qs.get('ref') || '').trim();
+  const utm_source = (qs.get('utm_source') || '').trim();
+  const utm_medium = (qs.get('utm_medium') || '').trim();
+  const utm_campaign = (qs.get('utm_campaign') || '').trim();
+
+  // Persist ref so re-visits keep attribution (non-harmful, local only)
+  if (ref) { try { localStorage.setItem('ref', ref); } catch {} }
+
+  /* -------------------- 2) FREE “BASIC ANALYTICS” (Netlify Forms) -------------------- */
+  // One submission per session to avoid spam. Non-blocking if offline.
+  (function submitTelemetryOnce(){
+  const KEY = 'submitted_telemetry_v2';
+  try { if (sessionStorage.getItem(KEY)) return; sessionStorage.setItem(KEY, '1'); } catch {}
+
+  // Device + environment
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';   // IANA TZ
+  const ua = navigator.userAgent;
+  const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+  const lang = navigator.language || '';
+  const dpr = String(window.devicePixelRatio || 1);
+  const scr = `${screen.width}x${screen.height}`;
+  const referrer = document.referrer || '';
+  const nowISO = new Date().toISOString();
+
+  // Build base payload (your existing fields retained)
+  const data = {
+    'form-name'   : 'share-telemetry',
+    'name'        : (new URLSearchParams(location.search).get('name') || 'you').trim(),
+    'ref'         : (new URLSearchParams(location.search).get('ref') || localStorage.getItem('ref') || '').trim(),
+    'utm_source'  : (new URLSearchParams(location.search).get('utm_source') || '').trim(),
+    'utm_medium'  : (new URLSearchParams(location.search).get('utm_medium') || '').trim(),
+    'utm_campaign': (new URLSearchParams(location.search).get('utm_campaign') || '').trim(),
+    'ua'          : ua,
+    'tz'          : tz,
+    'width'       : String(window.innerWidth),
+    'height'      : String(window.innerHeight),
+    'ts'          : nowISO,
+    'path'        : location.pathname + location.search,
+    'platform'    : platform,
+    'language'    : lang,
+    'dpr'         : dpr,
+    'screen'      : scr,
+    'geotz'       : tz,        // store tz under a second key if you like
+    'referrer'    : referrer
+  };
+
+  // Optional, consented geolocation (ask the user first)
+  const wantGeo = false; // flip to true only after you add a visible consent toggle
+  const submit = (payload) => {
+    const body = new URLSearchParams(payload).toString();
+    fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body })
+      .catch(()=>{});
+  };
+
+  if (wantGeo && 'geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { data.geolat = String(pos.coords.latitude); data.geolon = String(pos.coords.longitude); submit(data); },
+      () => submit(data),
+      { enableHighAccuracy:false, timeout:4000, maximumAge:600000 }
+    );
+  } else {
+    submit(data);
+  }
+})();
+
+
+  /* -------------------- ORIGINAL APP CODE (unchanged visuals) -------------------- */
+  const PIXEL_RATIO_CAP = 2.0;
+  const HEART_SCALE = 1.7;
   const OUTLINE_SAMPLES = 800;
 
   const LABEL_COUNT   = 56;
   const SPRITE_PX     = 44;
   const SPRITE_WORLD  = 0.36;
-  const SPEED         = 0.08;  // time-based, unaffected by resize/refresh rate
+  const SPEED         = 0.08;
   const DEPTH_WAVE    = 0.10;
   const NORMAL_PUSH   = 0.024;
 
-  // Camera: fixed radius; only aspect changes on resize
   let radius = 4.9;
   let theta  = Math.PI/4;
   let phi    = 0.6;
 
-  // Drag with inertia
   let dragging = false, lastX=0, lastY=0;
   let vTheta = 0, vPhi = 0;
   const ROTATE_SENS = 0.010;
   const DAMPING = 0.92;
   const PHI_MIN = 0.1, PHI_MAX = 1.3;
 
-  // Optional zoom (kept, but speed unaffected by size)
   let lastPinchDist = 0;
   const R_MIN = 3.4, R_MAX = 10;
 
-  // Phrase state
-  function getNameFromURL(){
-    const p = new URLSearchParams(location.search).get('name');
-    return (p && p.trim()) ? p.trim() : "you";
-  }
   function buildPhrase(name){ return `i love you ${name}`; }
-  let currentName = getNameFromURL();
+  let currentName = initialName;
   let currentPhrase = buildPhrase(currentName);
 
-  // UI refs
   const nameInput = document.getElementById('nameInput');
   const applyBtn  = document.getElementById('applyBtn');
   const shareBtn  = document.getElementById('shareBtn');
@@ -192,7 +281,6 @@
 
   nameInput.value = currentName;
 
-  // Ensure font ready, then init
   Promise.all([
     document.fonts.load(`700 ${Math.floor(SPRITE_PX)}px "Dancing Script"`),
     document.fonts.ready
@@ -225,7 +313,6 @@
 
     addBackgroundStars(scene, 520);
 
-    // Pointer controls (drag spin)
     renderer.domElement.addEventListener('pointerdown', (e) => {
       dragging = true; lastX = e.clientX; lastY = e.clientY;
       renderer.domElement.setPointerCapture(e.pointerId);
@@ -247,7 +334,6 @@
       renderer.domElement.releasePointerCapture(e.pointerId);
     });
 
-    // Wheel zoom (desktop) and pinch zoom (mobile)
     renderer.domElement.addEventListener('wheel', (e) => {
       radius = clamp(radius + (e.deltaY>0 ? 0.3 : -0.3), R_MIN, R_MAX);
       setCameraFromSpherical(camera);
@@ -268,7 +354,6 @@
       }
     }, {passive:false});
 
-    // Animate — strictly time-based; unaffected by resize
     let t0 = performance.now();
     (function animate(){
       requestAnimationFrame(animate);
@@ -287,11 +372,9 @@
       for (let i=0;i<labels.length;i++){
         const sp = labels[i];
         const u = (sp.userData.u0 + cycle) % 1.0;
-
         const P = sampleCurve(outlineCurve, u);
         const T = tangentOnCurve(outlineCurve, u).normalize();
         const N = new THREE.Vector3(-T.y, T.x, 0).normalize();
-
         const z = Math.sin((u + i/labels.length) * Math.PI * 2) * DEPTH_WAVE;
         sp.position.set(P.x + N.x * NORMAL_PUSH, P.y + N.y * NORMAL_PUSH, z);
       }
@@ -299,7 +382,6 @@
       renderer.render(scene, camera);
     })();
 
-    // Resize: keep same heart/camera distance; only update renderer size & aspect
     window.addEventListener('resize', () => {
       const w = window.innerWidth, h = window.innerHeight;
       renderer.setSize(w, h);
@@ -309,27 +391,28 @@
     updateShareLink();
   }
 
-  // Update phrase
   function applyName(newName){
     const name = (newName || "").trim();
     if (!name) return;
     currentName = name;
-    currentPhrase = buildPhrase(currentName);
-
     const oldTex = spriteTexture;
-    spriteTexture = makeTextTexture(currentPhrase, SPRITE_PX);
+    spriteTexture = makeTextTexture(buildPhrase(currentName), SPRITE_PX);
     for (const sp of labels){
       sp.material.map = spriteTexture;
       sp.material.needsUpdate = true;
     }
     if (oldTex) oldTex.dispose();
-
     updateShareLink();
   }
 
   function updateShareLink(){
     const url = new URL(location.href);
     url.searchParams.set('name', currentName);
+    // keep ref / utm if present so shares preserve attribution
+    if (ref) url.searchParams.set('ref', ref);
+    if (utm_source)   url.searchParams.set('utm_source', utm_source);
+    if (utm_medium)   url.searchParams.set('utm_medium', utm_medium);
+    if (utm_campaign) url.searchParams.set('utm_campaign', utm_campaign);
     const s = url.toString();
     shareLinkEl.textContent = s;
     shareLinkEl.dataset.href = s;
@@ -360,7 +443,7 @@
     pts.forEach(p => box.expandByPoint(p));
     const c = box.getCenter(new THREE.Vector2());
     const size = box.getSize(new THREE.Vector2());
-    const s = (2.0 / Math.max(size.x, size.y)) * scale; // fixed scale
+    const s = (2.0 / Math.max(size.x, size.y)) * scale;
     return pts.map(p => new THREE.Vector3( (p.x - c.x) * s, (p.y - c.y) * s, 0 ));
   }
 
@@ -509,6 +592,10 @@
       applyName(nm.trim());
       const u = new URL(location.href);
       u.searchParams.set('name', nm.trim());
+      if (ref) u.searchParams.set('ref', ref);
+      if (utm_source)   u.searchParams.set('utm_source', utm_source);
+      if (utm_medium)   u.searchParams.set('utm_medium', utm_medium);
+      if (utm_campaign) u.searchParams.set('utm_campaign', utm_campaign);
       history.replaceState(null, '', u);
     }
   });
