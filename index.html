@@ -12,61 +12,136 @@
   :root{
     --bg1:#07070a;
     --bg2:#0d0f15;
-    --pink:#ff4d88;
-    --maroon:#a0133b;
+
+    /* theme vars (updated by JS) */
+    --glow:#ff4d88;
+    --stroke:#a0133b;
     --text:#ffe6ef;
+
+    /* ui chrome */
+    --ui-bg: rgba(10,10,14,.45);
+    --ui-bd: rgba(255,255,255,.14);
+    --ui-bg-2: rgba(255,255,255,.06);
+    --ui-bd-2: rgba(255,255,255,.18);
+    --ring: 0 0 0 3px rgba(255,77,136,.28);
   }
+
   html,body{height:100%;margin:0;background:radial-gradient(1200px 900px at 70% 20%, var(--bg2), var(--bg1));color:#fff;overflow:hidden;}
   body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;}
 
+  /* ---------- Topbar ---------- */
   .topbar{
     position: fixed; left: 50%; top: 10px; transform: translateX(-50%);
-    display:flex; gap:8px; align-items:center; z-index:10; pointer-events:none;
+    display:flex; flex-direction:column; gap:8px; align-items:center; z-index:10; pointer-events:none;
+    max-width: min(92vw, 860px);
   }
-  .topbar .field{
-    display:flex; gap:6px; align-items:center; pointer-events:auto;
-    padding:6px 8px; border-radius:999px;
-    background: rgba(10,10,14,.45); border:1px solid rgba(255,255,255,.14);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  .row{
+    display:flex; gap:10px; align-items:center; pointer-events:auto; flex-wrap:wrap;
   }
+
+  .field, .picker, .colorpicker{
+    display:flex; align-items:center; gap:8px;
+    padding:8px 12px; border-radius:999px;
+    background: var(--ui-bg); border:1px solid var(--ui-bd);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    position:relative;
+    transition: box-shadow .15s ease, border-color .15s ease, background .2s ease;
+  }
+  .field:focus-within, .picker:focus-within, .colorpicker:focus-within{
+    box-shadow: var(--ring);
+    border-color: var(--glow);
+  }
+
   .topbar input{
-    width: clamp(160px, 28vw, 320px);
-    height: 26px; padding:0 10px; border-radius:999px;
-    border:1px solid rgba(255,255,255,.18);
-    background: rgba(255,255,255,.04); color:#fff; outline:none; font-size:13px;
+    width: clamp(260px, 50vw, 560px);
+    height: 38px; padding:0 14px; border-radius:999px;
+    border:1px solid var(--ui-bd-2);
+    background: rgba(255,255,255,.04); color:#fff; outline:none; font-size:16px;
+    transition: border-color .15s ease, background .2s ease;
   }
+  .topbar input:focus{ border-color: var(--glow); background: rgba(255,255,255,.06); }
+
   .topbar button{
-    height:28px; min-width:28px; display:grid; place-items:center;
-    border-radius:999px; border:1px solid rgba(255,255,255,.18);
+    height:38px; min-width:38px; display:grid; place-items:center;
+    border-radius:999px; border:1px solid var(--ui-bd-2);
     background: rgba(255,255,255,.08); color:#fff; cursor:pointer;
+    transition: transform .06s ease, background .15s ease, border-color .15s ease;
   }
-  .icon{width:16px;height:16px;display:block}
+  .topbar button:hover{ background: rgba(255,255,255,.12); }
+  .topbar button:active{ transform: translateY(1px) scale(.98); }
+
+  /* --------- Pretty selects (native select, custom shell) --------- */
+  .select-wrap{
+    position:relative; display:flex; align-items:center;
+  }
+  .select{
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    height:38px; padding:0 40px 0 14px; border-radius:999px;
+    border:1px solid var(--ui-bd-2);
+    background: var(--ui-bg-2);
+    color:#fff; font-size:14px; cursor:pointer; outline:none;
+    transition: border-color .15s ease, background .2s ease;
+  }
+  .select:focus{ border-color: var(--glow); background: rgba(255,255,255,.08); }
+
+  /* chevron */
+  .chev{
+    pointer-events:none; position:absolute; right:10px; width:18px; height:18px; opacity:.9;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
+  }
+
+  /* color swatch circle */
+  .swatch{
+    width:14px; height:14px; border-radius:50%;
+    border:1px solid rgba(255,255,255,.35);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.06), 0 0 14px rgba(0,0,0,.35) inset;
+  }
+
+  .icon{width:18px;height:18px;display:block}
+
+  /* Helper text */
+  .hint{
+    font-size:16px; line-height:1.35; opacity:.95; text-align:center; pointer-events:none;
+    max-width: min(92vw, 860px);
+    margin-top:2px;
+  }
 
   #app{position:fixed; inset:0; touch-action:none;}
   canvas{display:block;}
 
+  /* ---------- Footer ---------- */
   .footer{
     position: fixed; left:50%; transform: translateX(-50%);
-    bottom: 10px; display:flex; gap:10px; align-items:center; z-index:10; pointer-events:none;
+    bottom: 10px; display:flex; align-items:center; gap:12px; z-index:10; pointer-events:none; flex-direction:column;
+    max-width:min(92vw, 860px);
   }
+  .sharelabel{
+    font-size:16px; line-height:1.35; opacity:.95; text-align:center; pointer-events:none;
+    max-width:min(92vw, 860px);
+  }
+  .footrow{ display:flex; gap:10px; align-items:center; pointer-events:auto; flex-wrap:wrap; justify-content:center; }
+
   .pill{
     display:flex; align-items:center; gap:8px; pointer-events:auto;
-    padding:6px 10px; border-radius:999px;
-    background: rgba(10,10,14,.45); border:1px solid rgba(255,255,255,.14);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    padding:8px 12px; border-radius:999px;
+    background: var(--ui-bg); border:1px solid var(--ui-bd);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .sharebtn{
     display:flex; align-items:center; gap:6px; cursor:pointer;
-    border-radius:999px; border:1px solid rgba(255,255,255,.18);
-    background: rgba(255,255,255,.08); padding:6px 10px; color:#fff;
+    border-radius:999px; border:1px solid var(--ui-bd-2);
+    background: rgba(255,255,255,.08); padding:8px 12px; color:#fff;
+    transition: background .15s ease, border-color .15s ease;
   }
+  .sharebtn:hover{ background: rgba(255,255,255,.12); }
   .credit{font-size:11px; opacity:.9}
   .credit a{color:#fff; text-decoration:none}
   .gh{width:16px;height:16px; display:inline-block; vertical-align:-3px; opacity:.95}
 
+  /* ---------- Share sheet ---------- */
   .sheet{
     position: fixed; left:0; right:0; bottom:-220px; z-index:20;
-    background: rgba(8,8,12,.86); border-top:1px solid rgba(255,255,255,.14);
+    background: rgba(8,8,12,.86); border-top:1px solid var(--ui-bd);
     box-shadow: 0 -10px 32px rgba(0,0,0,.35);
     transition: bottom .25s ease; padding: 12px;
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -75,12 +150,12 @@
   .sheet .row{ display:flex; align-items:center; gap:8px; }
   .sheet .link{
     flex:1; min-width:0; font-size:12px; color:#eaeaea;
-    padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
+    padding:8px 10px; border-radius:10px; border:1px solid var(--ui-bd-2);
     background: rgba(255,255,255,.04); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .sheet .btn{
     display:flex; align-items:center; gap:6px; cursor:pointer;
-    padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); color:#fff;
+    padding:8px 10px; border-radius:10px; border:1px solid var(--ui-bd-2); background: rgba(255,255,255,.08); color:#fff;
   }
   .sheet .topline{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
   .sheet .close{ border:none; background:transparent; color:#fff; width:30px; height:30px; border-radius:999px; display:grid; place-items:center; }
@@ -90,32 +165,68 @@
 </style>
 </head>
 <body>
-  <!-- Name input -->
-  <div class="topbar" role="region" aria-label="Enter name">
-    <div class="field">
-      <input id="nameInput" type="text" placeholder="Type a name…" autocomplete="off" />
-      <button id="applyBtn" title="Apply name">
-        <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
-      </button>
+  <!-- Controls -->
+  <div class="topbar" role="region" aria-label="Controls">
+    <div class="row">
+      <div class="field">
+        <input id="textInput" type="text" placeholder="Type text…" autocomplete="off" />
+        <button id="applyBtn" title="Apply">
+          <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+        </button>
+      </div>
+
+      <!-- Shape picker -->
+      <div class="picker">
+        <div aria-hidden="true" title="Outline">
+          <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.3l-1.1-1C6.1 15.9 3 13.1 3 9.7 3 7.1 5.1 5 7.7 5c1.5 0 3 .7 3.9 1.9C12.3 5.7 13.8 5 15.3 5 17.9 5 20 7.1 20 9.7c0 3.4-3.1 6.2-7.9 10.6l-1.1 1z"/></svg>
+        </div>
+        <div class="select-wrap">
+          <select id="shapeSelect" class="select" title="Choose outline">
+            <option value="heart">Heart</option>
+            <option value="star">Star (soft 5-point)</option>
+            <option value="infinity">Infinity</option>
+          </select>
+          <svg class="chev" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+        </div>
+      </div>
+
+      <!-- Color picker with live swatch -->
+      <div class="colorpicker">
+        <div class="swatch" id="swatch" aria-hidden="true"></div>
+        <div class="select-wrap">
+          <select id="colorSelect" class="select" title="Choose color">
+            <option value="pink">Pink</option>
+            <option value="blue">Blue</option>
+            <option value="yellow">Yellow</option>
+            <option value="green">Green</option>
+            <option value="purple">Purple</option>
+          </select>
+          <svg class="chev" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+        </div>
+      </div>
     </div>
+    <div class="hint">enter text here to show</div>
   </div>
 
-  <!-- Heart -->
-  <div id="app" aria-label="Heart animation"></div>
+  <!-- Scene -->
+  <div id="app" aria-label="Outline animation"></div>
 
   <!-- Footer -->
   <div class="footer">
-    <button id="shareBtn" class="pill sharebtn" title="Share link">
-      <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.02-4.11A2.99 2.99 0 0 0 18 7.91a3 3 0 1 0-2.83-4H15a3 3 0 0 0 0 4.18l-7.02 4.11A3 3 0 1 0 9 12c0-.24-.04-.47-.09-.7l7.13 4.19c.54.5 1.25.81 2.05.81a3 3 0 1 0 0-6z"/></svg>
-      Share
-    </button>
-    <div class="pill credit" title="Creator">
-      created by amkaamran
-      <a href="https://github.com/amk1101" target="_blank" rel="noopener" aria-label="GitHub">
-        <svg class="gh" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M12 .5a12 12 0 0 0-3.79 23.4c.6.1.82-.26.82-.58v-2.17c-3.34.73-4.04-1.6-4.04-1.6-.55-1.4-1.35-1.78-1.35-1.78-1.1-.75.08-.73.08-.73 1.22.09 1.87 1.25 1.87 1.25 1.08 1.85 2.83 1.31 3.52 1 .11-.78.42-1.31.77-1.61-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.39 1.24-3.23-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.28-1.55 3.29-1.23 3.29-1.23.67 1.65.25 2.87.12 3.17.77.84 1.24 1.92 1.24 3.23 0 4.62-2.81 5.64-5.49 5.94.43.38.82 1.12.82 2.26v3.35c0 .32.22.7.82.58A12 12 0 0 0 12 .5z"/>
-        </svg>
-      </a>
+    <div class="sharelabel">share with your friends</div>
+    <div class="footrow">
+      <button id="shareBtn" class="pill sharebtn" title="Share link">
+        <svg class="icon" viewBox="0 0 24 24"><path fill="currentColor" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.02-4.11A2.99 2.99 0 0 0 18 7.91a3 3 0 1 0-2.83-4H15a3 3 0 0 0 0 4.18l-7.02 4.11A3 3 0 1 0 9 12c0-.24-.04-.47-.09-.7l7.13 4.19c.54.5 1.25.81 2.05.81a3 3 0 1 0 0-6z"/></svg>
+        Share
+      </button>
+      <div class="pill credit" title="Creator">
+        created by amkaamran
+        <a href="https://github.com/amk1101" target="_blank" rel="noopener" aria-label="GitHub">
+          <svg class="gh" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M12 .5a12 12 0 0 0-3.79 23.4c.6.1.82-.26.82-.58v-2.17c-3.34.73-4.04-1.6-4.04-1.6-.55-1.4-1.35-1.78-1.35-1.78-1.1-.75.08-.73.08-.73 1.22.09 1.87 1.25 1.87 1.25 1.08 1.85 2.83 1.31 3.52 1 .11-.78.42-1.31.77-1.61-2.67-.3-5.47-1.34-5.47-5.95 0-1.31.47-2.39 1.24-3.23-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.28-1.55 3.29-1.23 3.29-1.23.67 1.65.25 2.87.12 3.17.77.84 1.24 1.92 1.24 3.23 0 4.62-2.81 5.64-5.49 5.94.43.38.82 1.12.82 2.26v3.35c0 .32.22.7.82.58A12 12 0 0 0 12 .5z"/>
+          </svg>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -134,19 +245,20 @@
         Copy
       </button>
     </div>
-    <div id="howto">How to share: type a name → Apply → Share → Copy and send.</div>
+    <div id="howto">How to share: type text → Apply → Share → Copy and send.</div>
   </div>
 
   <!-- Netlify Forms sink -->
   <form name="share-telemetry" netlify netlify-honeypot="bot-field">
     <input type="text" name="form-name" value="share-telemetry" />
     <input type="text" name="bot-field" />
-    <!-- columns you’ll see in Netlify CSV -->
     <input type="text" name="event" />
     <input type="text" name="apply_seq" />
     <input type="text" name="path_before" />
     <input type="text" name="landing_url" />
     <input type="text" name="name" />
+    <input type="text" name="shape" />
+    <input type="text" name="color" />
     <input type="text" name="ref" />
     <input type="text" name="utm_source" />
     <input type="text" name="utm_medium" />
@@ -173,10 +285,7 @@
   const utm_source = (qs.get('utm_source') || '').trim();
   const utm_medium = (qs.get('utm_medium') || '').trim();
   const utm_campaign = (qs.get('utm_campaign') || '').trim();
-
   if (ref) { try { localStorage.setItem('ref', ref); } catch {} }
-
-  /* -------------------- Landing URL (for clean referrer context) -------------------- */
   const landingHref = location.href;
 
   /* -------------------- Helpers: env + post + counters -------------------- */
@@ -196,7 +305,6 @@
       referrer: document.referrer || ''
     };
   }
-
   function postToNetlify(payload) {
     const base = {
       'form-name'   : 'share-telemetry',
@@ -210,32 +318,64 @@
     const body = new URLSearchParams(base).toString();
     fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }).catch(()=>{});
   }
-
   function nextApplySeq(){
     const KEY = 'apply_seq_v1';
     let n = 0;
     try { n = parseInt(sessionStorage.getItem(KEY) || '0', 10) || 0; n++; sessionStorage.setItem(KEY, String(n)); } catch {}
     return n;
   }
-
-  function trackApply(name){
+  function trackApply(text, shape, color){
     postToNetlify({
-      event: 'apply',
-      name: name,
-      apply_seq: String(nextApplySeq()),
-      path_before: location.pathname + location.search, // pre-update
-      landing_url: landingHref
+      event:'apply',
+      name:text,                            // legacy
+      shape, color,
+      apply_seq:String(nextApplySeq()),
+      path_before:location.pathname+location.search,
+      landing_url:landingHref
     });
   }
 
+  /* -------------------- Theme palettes -------------------- */
+  const PALETTES = {
+    pink  : { glow:'#ff4d88', stroke:'#a0133b', text:'#ffe6ef' },
+    blue  : { glow:'#57a5ff', stroke:'#1e4ea7', text:'#e9f3ff' },
+    yellow: { glow:'#ffd54d', stroke:'#b36b00', text:'#fff9e6' },
+    green : { glow:'#4dff88', stroke:'#0f8a4a', text:'#eafff2' },
+    purple: { glow:'#c26bff', stroke:'#6a22a7', text:'#f3e9ff' }
+  };
+  function setTheme(colorKey){
+    const pal = PALETTES[colorKey] || PALETTES.pink;
+    const root = document.documentElement.style;
+    root.setProperty('--glow', pal.glow);
+    root.setProperty('--stroke', pal.stroke);
+    root.setProperty('--text', pal.text);
+    // update swatch
+    const sw = document.getElementById('swatch');
+    if (sw){
+      sw.style.background = pal.glow;
+      sw.style.boxShadow = `0 0 0 3px rgba(255,255,255,.06), 0 0 14px ${hexToRgba(pal.glow, .55)} inset`;
+      sw.style.borderColor = hexToRgba(pal.stroke, .7);
+    }
+  }
+  function hexToRgba(hex, a){
+    const n = hex.replace('#','');
+    const r = parseInt(n.substring(0,2),16), g = parseInt(n.substring(2,4),16), b = parseInt(n.substring(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
   /* -------------------- App state -------------------- */
-  const initialName = (qs.get('name') || 'you').trim();
-  function buildPhrase(name){ return `i love you ${name}`; }
-  let currentName = initialName;
-  let currentPhrase = buildPhrase(currentName);
+  const initialText  = (qs.get('text')  || qs.get('name') || 'i love you …').trim();
+  const initialShape = (qs.get('shape') || 'heart').trim().toLowerCase();
+  const initialColor = (qs.get('color') || 'pink').trim().toLowerCase();
+
+  let currentText  = initialText;
+  let currentShape = ['heart','star','infinity'].includes(initialShape) ? initialShape : 'heart';
+  let currentColor = ['pink','blue','yellow','green','purple'].includes(initialColor) ? initialColor : 'pink';
 
   // UI refs
-  const nameInput = document.getElementById('nameInput');
+  const textInput   = document.getElementById('textInput');
+  const shapeSelect = document.getElementById('shapeSelect');
+  const colorSelect = document.getElementById('colorSelect');
   const applyBtn  = document.getElementById('applyBtn');
   const shareBtn  = document.getElementById('shareBtn');
   const sheet     = document.getElementById('sheet');
@@ -243,19 +383,24 @@
   const shareLinkEl = document.getElementById('shareLink');
   const copyBtn   = document.getElementById('copyBtn');
 
-  nameInput.value = currentName;
+  // init UI values
+  textInput.value = currentText;
+  shapeSelect.value = currentShape;
+  colorSelect.value = currentColor;
+  setTheme(currentColor);
 
   /* -------------------- THREE scene -------------------- */
   const PIXEL_RATIO_CAP = 2.0;
-  const HEART_SCALE = 1.7;
-  const OUTLINE_SAMPLES = 800;
+  const OUTLINE_SAMPLES = 900;
 
-  const LABEL_COUNT   = 56;
-  const SPRITE_PX     = 44;
-  const SPRITE_WORLD  = 0.36;
-  const SPEED         = 0.08;
-  const DEPTH_WAVE    = 0.10;
-  const NORMAL_PUSH   = 0.024;
+  const SPRITE_PX_BASE = 64;
+  const SPRITE_PX = Math.round(SPRITE_PX_BASE * Math.min(window.devicePixelRatio || 1, 2));
+  const SPRITE_WORLD  = 0.48;
+
+  const LABEL_COUNT   = 60;
+  const SPEED         = 0.085;
+  const DEPTH_WAVE    = 0.12;
+  const NORMAL_PUSH   = 0.028;
 
   let radius = 4.9;
   let theta  = Math.PI/4;
@@ -270,12 +415,12 @@
   let lastPinchDist = 0;
   const R_MIN = 3.4, R_MAX = 10;
 
+  let renderer, scene, camera, outlineCurve, outlineGroup, labels = [], spriteTexture = null;
+
   Promise.all([
     document.fonts.load(`700 ${Math.floor(SPRITE_PX)}px "Dancing Script"`),
     document.fonts.ready
   ]).then(init);
-
-  let renderer, scene, camera, outlineCurve, labels = [], spriteTexture = null;
 
   function init(){
     const appEl = document.getElementById('app');
@@ -292,10 +437,11 @@
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
     setCameraFromSpherical(camera);
 
-    outlineCurve = makeHeartCurve(OUTLINE_SAMPLES, HEART_SCALE);
-    scene.add(makeLine(outlineCurve, getCss('--maroon'), getCss('--pink')));
+    outlineCurve = makeCurve(currentShape, OUTLINE_SAMPLES);
+    outlineGroup = makeLine(outlineCurve, getCss('--stroke'), getCss('--glow'));
+    scene.add(outlineGroup);
 
-    spriteTexture = makeTextTexture(currentPhrase, SPRITE_PX);
+    spriteTexture = makeTextTexture(currentText, SPRITE_PX);
     labels = makeMovingLabels(spriteTexture, outlineCurve, LABEL_COUNT, SPRITE_WORLD);
     labels.forEach(s => scene.add(s));
 
@@ -376,31 +522,91 @@
       camera.aspect = w/h; camera.updateProjectionMatrix();
     });
 
-    updateShareLink();
+    updateShareLink(); // initial
   }
 
-  /* -------------------- UI logic -------------------- */
-  function applyName(newName){
-    const name = (newName || "").trim();
-    if (!name) return;
-    currentName = name;
+  /* -------------------- Preview updates (no telemetry, no URL) -------------------- */
+  shapeSelect.addEventListener('change', () => {
+    currentShape = shapeSelect.value;
+    if (outlineGroup) { scene.remove(outlineGroup); disposeGroup(outlineGroup); }
+    outlineCurve = makeCurve(currentShape, OUTLINE_SAMPLES);
+    outlineGroup = makeLine(outlineCurve, getCss('--stroke'), getCss('--glow'));
+    scene.add(outlineGroup);
+  });
+
+  colorSelect.addEventListener('change', () => {
+    currentColor = colorSelect.value;
+    setTheme(currentColor);
     const oldTex = spriteTexture;
-    spriteTexture = makeTextTexture(buildPhrase(currentName), SPRITE_PX);
+    spriteTexture = makeTextTexture(currentText, SPRITE_PX);
     for (const sp of labels){
       sp.material.map = spriteTexture;
       sp.material.needsUpdate = true;
+      const aspect = spriteTexture.image.width / spriteTexture.image.height;
+      sp.scale.set(SPRITE_WORLD * aspect, SPRITE_WORLD, 1);
     }
     if (oldTex) oldTex.dispose();
+    updateOutlineColors(outlineGroup, getCss('--stroke'), getCss('--glow'));
+  });
+
+  /* -------------------- Apply (ONLY place that triggers telemetry + URL/share update) -------------------- */
+  function applyNow(){
+    const t = (textInput.value || '').trim();
+    if (!t) return;
+
+    currentText = t;
+
+    // telemetry BEFORE URL change
+    trackApply(currentText, currentShape, currentColor);
+
+    // refresh text texture
+    const oldTex = spriteTexture;
+    spriteTexture = makeTextTexture(currentText, SPRITE_PX);
+    for (const sp of labels){
+      sp.material.map = spriteTexture;
+      sp.material.needsUpdate = true;
+      const aspect = spriteTexture.image.width / spriteTexture.image.height;
+      sp.scale.set(SPRITE_WORLD * aspect, SPRITE_WORLD, 1);
+    }
+    if (oldTex) oldTex.dispose();
+
+    // update URL (after logging)
+    const u = new URL(location.href);
+    u.searchParams.set('text', currentText);
+    u.searchParams.set('shape', currentShape);
+    u.searchParams.set('color', currentColor);
+    if (ref) u.searchParams.set('ref', ref);
+    if (utm_source)   u.searchParams.set('utm_source', utm_source);
+    if (utm_medium)   u.searchParams.set('utm_medium', utm_medium);
+    if (utm_campaign) u.searchParams.set('utm_campaign', utm_campaign);
+    history.replaceState(null, '', u);
+
     updateShareLink();
   }
 
+  applyBtn.addEventListener('click', applyNow);
+  textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyNow(); });
+
+  /* -------------------- Share sheet -------------------- */
+  shareBtn.addEventListener('click', () => { updateShareLink(); sheet.classList.add('open'); });
+  closeSheet.addEventListener('click', () => sheet.classList.remove('open'));
+  copyBtn.addEventListener('click', async () => {
+    const href = shareLinkEl.dataset.href || shareLinkEl.textContent;
+    if (!href) return;
+    try { await navigator.clipboard.writeText(href); copyBtn.textContent = 'Copied'; setTimeout(()=>copyBtn.textContent='Copy', 900); }
+    catch {
+      const tmp = document.createElement('textarea'); tmp.value = href; document.body.appendChild(tmp);
+      tmp.select(); document.execCommand('copy'); document.body.removeChild(tmp);
+      copyBtn.textContent = 'Copied'; setTimeout(()=>copyBtn.textContent='Copy', 900);
+    }
+  });
+
+  /* -------------------- Helpers -------------------- */
   function updateShareLink(){
     const url = new URL(location.href);
-    url.searchParams.set('name', currentName);
-    if (ref) url.searchParams.set('ref', ref);
-    if (utm_source)   url.searchParams.set('utm_source', utm_source);
-    if (utm_medium)   url.searchParams.set('utm_medium', utm_medium);
-    if (utm_campaign) url.searchParams.set('utm_campaign', utm_campaign);
+    url.searchParams.set('text', currentText);
+    url.searchParams.set('shape', currentShape);
+    url.searchParams.set('color', currentColor);
     const s = url.toString();
     shareLinkEl.textContent = s;
     shareLinkEl.dataset.href = s;
@@ -415,7 +621,15 @@
     cam.lookAt(0,0,0);
   }
 
-  // Heart curve & sampling
+  /* -------------------- Curve library (heart, soft star, infinity) -------------------- */
+  function makeCurve(kind, samples){
+    switch(kind){
+      case 'heart':    return makeHeartCurve(samples, 1.7);
+      case 'star':     return makeSoftStarCurve(samples, 1.65, 5, 0.52, 1.4);
+      case 'infinity': return makeInfinity(samples, 1.6);
+      default:         return makeHeartCurve(samples, 1.7);
+    }
+  }
   function heart2D(t){
     const x = 16 * Math.sin(t)**3;
     const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
@@ -427,17 +641,44 @@
       const t = (i / samples) * Math.PI * 2;
       pts.push(heart2D(t));
     }
+    return normalize2D(pts, scale);
+  }
+  function makeSoftStarCurve(samples, scale, points=5, innerRatio=0.5, gamma=1.4){
+    const pts = [];
+    for(let i=0;i<samples;i++){
+      const a = (i / samples) * Math.PI * 2;
+      const c = (1 + Math.cos(points * a)) * 0.5;
+      const s = Math.pow(c, gamma);
+      const r = innerRatio + (1 - innerRatio) * s;
+      pts.push(new THREE.Vector2(r*Math.cos(a), r*Math.sin(a)));
+    }
+    return normalize2D(pts, scale);
+  }
+  function makeInfinity(samples, scale){
+    const pts = [];
+    const a = 1.0;
+    for (let i=0;i<samples;i++){
+      const t = ((i / samples) * Math.PI*2) - Math.PI;
+      const denom = 1 + Math.sin(t)**2;
+      const x = (a * Math.SQRT1_2 * Math.cos(t)) / denom;
+      const y = (a * Math.SQRT1_2 * Math.sin(t) * Math.cos(t)) / denom;
+      pts.push(new THREE.Vector2(x, y));
+    }
+    return normalize2D(pts, scale);
+  }
+  function normalize2D(pts2, scale){
     const box = new THREE.Box2();
-    pts.forEach(p => box.expandByPoint(p));
+    pts2.forEach(p => box.expandByPoint(p));
     const c = box.getCenter(new THREE.Vector2());
     const size = box.getSize(new THREE.Vector2());
     const s = (2.0 / Math.max(size.x, size.y)) * scale;
-    return pts.map(p => new THREE.Vector3( (p.x - c.x) * s, (p.y - c.y) * s, 0 ));
+    return pts2.map(p => new THREE.Vector3( (p.x - c.x) * s, (p.y - c.y) * s, 0 ));
   }
 
-  function makeLine(curvePts, colorHex, glowHex){
+  /* -------------------- Geometry & labels -------------------- */
+  function makeLine(curvePts, strokeColorHex, glowColorHex){
     const geo = new THREE.BufferGeometry().setFromPoints(curvePts.concat([curvePts[0]]));
-    const mat = new THREE.LineBasicMaterial({ color: new THREE.Color(colorHex) });
+    const mat = new THREE.LineBasicMaterial({ color: new THREE.Color(strokeColorHex) });
     const line = new THREE.Line(geo, mat);
 
     const glowGeo = new THREE.BufferGeometry();
@@ -448,13 +689,23 @@
       glowPos[i*3+2] = 0;
     }
     glowGeo.setAttribute('position', new THREE.BufferAttribute(glowPos, 3));
-    const glowMat = new THREE.PointsMaterial({ color: new THREE.Color(glowHex), size: 0.022, transparent:true, opacity:0.30 });
+    const glowMat = new THREE.PointsMaterial({ color: new THREE.Color(glowColorHex), size: 0.024, transparent:true, opacity:0.30 });
     const glow = new THREE.Points(glowGeo, glowMat);
 
     const group = new THREE.Group();
     group.add(line);
     group.add(glow);
     return group;
+  }
+  function updateOutlineColors(group, strokeHex, glowHex){
+    if (group && group.children && group.children[0]?.material) {
+      group.children[0].material.color = new THREE.Color(strokeHex);
+      group.children[0].material.needsUpdate = true;
+    }
+    if (group && group.children && group.children[1]?.material) {
+      group.children[1].material.color = new THREE.Color(glowHex);
+      group.children[1].material.needsUpdate = true;
+    }
   }
 
   function lengthTable(curvePts){
@@ -465,7 +716,6 @@
     const total = L[curvePts.length-1] + curvePts[curvePts.length-1].distanceTo(curvePts[0]);
     return { L, total };
   }
-
   const _cache = { curve:null, table:null };
   function ensureTable(curvePts){
     if (_cache.curve !== curvePts){
@@ -474,11 +724,9 @@
     }
     return _cache.table;
   }
-
   function sampleCurve(curvePts, u){
     const { L, total } = ensureTable(curvePts);
     const target = u * total;
-
     let i=0;
     while (i<L.length && L[i] < target) i++;
     const i0 = (i===0) ? 0 : i-1;
@@ -489,7 +737,6 @@
     const t = (target - l0) / segLen;
     return new THREE.Vector3().lerpVectors(p0, p1, t);
   }
-
   function tangentOnCurve(curvePts, u){
     const du = 1/curvePts.length;
     const pA = sampleCurve(curvePts, (u - du + 1) % 1);
@@ -497,9 +744,10 @@
     return new THREE.Vector3().subVectors(pB, pA);
   }
 
-  // Text sprites
-  function makeTextTexture(phrase, px){
-    const pad = Math.max(12, Math.floor(px * 0.6));
+  /* -------------------- Text sprites -------------------- */
+  function makeTextTexture(text, px){
+    const phrase = text;
+    const pad = Math.max(14, Math.floor(px * 0.6));
     const tmp = document.createElement('canvas').getContext('2d');
     tmp.font = `700 ${px}px "Dancing Script", cursive`;
     const w = Math.ceil(tmp.measureText(phrase).width) + pad*2;
@@ -516,14 +764,14 @@
 
     const cx = W/2, cy = H/2;
 
-    ctx.shadowColor = getCss('--pink');
-    ctx.shadowBlur = Math.max(10, Math.floor(px*0.5));
+    ctx.shadowColor = getCss('--glow');
+    ctx.shadowBlur = Math.max(12, Math.floor(px*0.55));
     ctx.fillStyle = getCss('--text');
     ctx.fillText(phrase, cx, cy);
 
     ctx.shadowBlur = 0;
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = getCss('--maroon');
+    ctx.strokeStyle = getCss('--stroke');
     ctx.lineWidth = Math.max(2, Math.floor(px*0.10));
     ctx.strokeText(phrase, cx, cy);
     ctx.fillStyle = getCss('--text');
@@ -559,55 +807,24 @@
       pos[i*3+2] = r*Math.cos(ph);
     }
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-    const mat = new THREE.PointsMaterial({ size: 0.02, color: 0xffffff, transparent:true, opacity:0.28 });
+    const mat = new THREE.PointsMaterial({ size: 0.022, color: 0xffffff, transparent:true, opacity:0.28 });
     scene.add(new THREE.Points(geo, mat));
   }
 
-  // Utils
+  /* -------------------- Utils -------------------- */
   function nextPow2(v){ let p=1; while(p<v) p<<=1; return p; }
   function getCss(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
   function dist2(t1, t2){ const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY; return dx*dx+dy*dy; }
-
-  /* -------------------- Apply name (with telemetry BEFORE URL change) -------------------- */
-  applyBtn.addEventListener('click', () => {
-    const nm = nameInput.value && nameInput.value.trim();
-    if (!nm) return;
-
-    // 1) record BEFORE changing the URL so referrer/path are clean
-    trackApply(nm);
-
-    // 2) update visuals
-    applyName(nm);
-
-    // 3) update URL (after logging)
-    const u = new URL(location.href);
-    u.searchParams.set('name', nm);
-    if (ref) u.searchParams.set('ref', ref);
-    if (utm_source)   u.searchParams.set('utm_source', utm_source);
-    if (utm_medium)   u.searchParams.set('utm_medium', utm_medium);
-    if (utm_campaign) u.searchParams.set('utm_campaign', utm_campaign);
-    history.replaceState(null, '', u);
-  });
-  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyBtn.click(); });
-
-  /* -------------------- Share click (NO telemetry) -------------------- */
-  shareBtn.addEventListener('click', () => {
-    updateShareLink();
-    sheet.classList.add('open');
-  });
-  closeSheet.addEventListener('click', () => sheet.classList.remove('open'));
-
-  copyBtn.addEventListener('click', async () => {
-    const href = shareLinkEl.dataset.href || shareLinkEl.textContent;
-    if (!href) return;
-    try { await navigator.clipboard.writeText(href); copyBtn.textContent = 'Copied'; setTimeout(()=>copyBtn.textContent='Copy', 900); }
-    catch {
-      const tmp = document.createElement('textarea'); tmp.value = href; document.body.appendChild(tmp);
-      tmp.select(); document.execCommand('copy'); document.body.removeChild(tmp);
-      copyBtn.textContent = 'Copied'; setTimeout(()=>copyBtn.textContent='Copy', 900);
-    }
-  });
+  function disposeGroup(g){
+    g.traverse(o=>{
+      if (o.geometry) o.geometry.dispose?.();
+      if (o.material){
+        if (Array.isArray(o.material)) o.material.forEach(m=>m.dispose?.());
+        else o.material.dispose?.();
+      }
+    });
+  }
 })();
 </script>
 </body>
